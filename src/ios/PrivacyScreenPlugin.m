@@ -18,6 +18,13 @@
 @implementation AppDelegate (PrivacyScreenPlugin)
 
 - (void)applicationWillResignActive:(UIApplication *)application {
+    @try{
+         [[NSNotificationCenter defaultCenter] removeObserver:self
+           name:UIScreenCapturedDidChangeNotification object:nil];
+    }
+    @catch(id anException){
+        NSLog(@"No active observer to termiate.");
+    }
     self.window.backgroundColor = [UIColor clearColor];
 
     UIBlurEffect *blurEffect = [UIBlurEffect effectWithStyle:UIBlurEffectStyleExtraLight];
@@ -37,17 +44,67 @@
 }
 
 - (void)applicationDidBecomeActive:(UIApplication *)application {
-    NSLog(@"Hiding blur");
+    if (@available(iOS 11.0, *)) {
+        [[NSNotificationCenter defaultCenter] addObserver:self
+            selector:@selector(handleScreenCaptureChange)
+        name:UIScreenCapturedDidChangeNotification object:nil];
+    }
+
+    NSLog(@"App is active");
+    BOOL isCaptured = [[UIScreen mainScreen] isCaptured];
+    // grab a reference to our custom blur view
+   UIView *blurEffectView = [self.window viewWithTag:1234];
+    if (isCaptured) {
+        // fade in the view
+        [UIView animateWithDuration:0.5 animations:^{
+            blurEffectView.alpha = 1;
+        }];
+    }
+    else {
+        // fade away colour view from main view
+        [UIView animateWithDuration:0.5 animations:^{
+            blurEffectView.alpha = 0;
+        } completion:^(BOOL finished) {
+            // remove when finished fading
+            [blurEffectView removeFromSuperview];
+        }];
+    }
+    // grab a reference to our custom blur view
+   // UIView *blurEffectView = [self.window viewWithTag:1234];
+
+    // fade away colour view from main view
+   // [UIView animateWithDuration:0.5 animations:^{
+    //    blurEffectView.alpha = 0;
+  //  } completion:^(BOOL finished) {
+        // remove when finished fading
+     //   [blurEffectView removeFromSuperview];
+   // }];
+}
+-(void)handleScreenCaptureChange
+{
     // grab a reference to our custom blur view
     UIView *blurEffectView = [self.window viewWithTag:1234];
 
-    // fade away colour view from main view
+    if (@available(iOS 11.0, *)) {
+        BOOL isCaptured = [[UIScreen mainScreen] isCaptured];
+        if (isCaptured) {
+    //Screen being captured"
+    // fade in the view
     [UIView animateWithDuration:0.5 animations:^{
-        blurEffectView.alpha = 0;
-    } completion:^(BOOL finished) {
-        // remove when finished fading
-        [blurEffectView removeFromSuperview];
+        blurEffectView.alpha = 1;
     }];
+        }
+          else{
+            // fade away colour view from main view
+            [UIView animateWithDuration:0.5 animations:^{
+                blurEffectView.alpha = 0;
+            } completion:^(BOOL finished) {
+                // remove when finished fading
+                [blurEffectView removeFromSuperview];
+            }];
+        }
+    }
 }
+
 
 @end
